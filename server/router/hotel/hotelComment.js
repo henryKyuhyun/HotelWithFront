@@ -15,7 +15,6 @@ router.post("/hotelComment", (req, res) => {
   );
 });
 
-// router.get("/hotelComment/:hotel_id", (req, res) => {
 router.get("/hotelComments/:hotel_id", (req, res) => {
   const { hotel_id } = req.params;
 

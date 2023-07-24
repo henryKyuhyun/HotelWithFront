@@ -18,14 +18,32 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+//업로드된 파일의 MIME 타입을 체크하는 함수  "image/jpeg"
+const fileFilter = (req, file, cb) => {
+  const typeArray = file.mimetype.split("/");
+  const fileType = typeArray[1];
 
-router.post("/uploadHotel", upload.single("hotelImages"), (req, res) => {
+  if (fileType == "jpg" || fileType == "png" || fileType == "jpeg") {
+    req.fileValidationError = null;
+    cb(null, true);
+  } else {
+    req.fileValidationError = "jpg,jpeg,png 파일만 업로드 가능합니다.";
+    cb(null, false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    // fileSize: 10 * 1024 * 1024 //크기 제한 : 10MB
+  },
+});
+
+router.post("/uploadHotel", upload.array("hotelImages", 5), (req, res) => {
   console.log("Request body", req.body);
   const { hotelName, hotelInfo, hotelType, hotelAddress, price, user_id } =
     req.body;
-  console.log("Request file", req.file);
-  console.log("File path", req.file.path);
 
   // user_role Db에서 가져오기
   db.query(
@@ -36,7 +54,10 @@ router.post("/uploadHotel", upload.single("hotelImages"), (req, res) => {
       // user_role이 'hotel_admin'인 사용자 만 호텔 정보를 데이터베이스에 저장할 수 있는지 확인.
       if (result.length > 0 && result[0].user_role === "hotel_admin") {
         // 권한 확인 변경
-        const hotelImages = JSON.stringify([req.file.path]);
+        // const hotelImages = JSON.stringify(req.files.map((file) => file.path));
+        const hotelImages = JSON.stringify(
+          req.files.map((file) => "hotelImage/" + file.filename)
+        ); // 이걸로 변경
 
         const newHotel = {
           hotelName,
