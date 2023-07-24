@@ -1,8 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
-// const path = require("path"); // 게시판용
-// const publicPath = path.join(__dirname, "public"); // 게시판용
 
 const app = express();
 
@@ -11,6 +9,8 @@ const join = require("./router/members/join");
 const login = require("./router/members/login");
 const uploadHotel = require("./router/hotel/uploadHotel");
 const hotelList = require("./router/hotel/hotelList");
+const hotelDetail = require("./router/hotel/hotelDetail");
+const hotelComment = require("./router/hotel/hotelComment");
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -26,6 +26,8 @@ app.use("/api", join);
 app.use("/api", login);
 app.use("/api", uploadHotel);
 app.use("/api", hotelList);
+app.use("/api", hotelDetail);
+app.use("/api", hotelComment);
 
 const port = 4000;
 app.listen(port, () => {

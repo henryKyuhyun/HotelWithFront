@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../../config/database");
-const multer = require("multer");
+const multer = require("multer"); // image 업로드를 위한 Module
 const { v4: uuid4 } = require("uuid");
 const path = require("path");
 
+// 이미지 저장
 const storage = multer.diskStorage({
+  //저장장소 HotelImage
   destination: (req, file, cb) => {
     cb(null, "hotelImage");
   },
+  // filename -> 현재시간 + 확장자
   filename: (req, file, cb) => {
     console.log(file);
     cb(null, Date.now() + path.extname(file.originalname));
@@ -26,12 +29,11 @@ router.post("/uploadHotel", upload.single("hotelImages"), (req, res) => {
 
   // user_role Db에서 가져오기
   db.query(
-    // "SELECT * FROM users WHERE user_role = ?",
     "SELECT * FROM users WHERE user_id = ?",
     [user_id],
     (error, result) => {
       if (error) throw error;
-
+      // user_role이 'hotel_admin'인 사용자 만 호텔 정보를 데이터베이스에 저장할 수 있는지 확인.
       if (result.length > 0 && result[0].user_role === "hotel_admin") {
         // 권한 확인 변경
         const hotelImages = JSON.stringify([req.file.path]);
@@ -42,9 +44,10 @@ router.post("/uploadHotel", upload.single("hotelImages"), (req, res) => {
           hotelType,
           hotelAddress,
           price,
-          hotelImages, // 추가
+          hotelImages,
           user_id,
         };
+        // 클라이언트가 전송한 req.body에서 호텔 정보를 추출: 호텔 이름, 설명, 유형, 주소, 가격 및 사용자 아이디(user_id).
 
         db.query("INSERT INTO hotels SET ?", newHotel, (error) => {
           if (error) throw error;
