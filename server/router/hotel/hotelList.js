@@ -3,15 +3,19 @@ const router = express.Router();
 const db = require("../../config/database");
 
 router.get("/hotelList", (req, res) => {
-  db.query(
-    // "SELECT hotelName, hotelAddress, price, hotelImages, user_id FROM hotels",
-    "SELECT hotel_id, hotelName, hotelAddress, price, hotelImages, user_id FROM hotels",
+  const { hotelType } = req.query; ///api/hotelList?hotelType=motel
 
-    (error, result) => {
-      if (error) throw error;
+  let query =
+    "SELECT hotel_id, hotelName, hotelType, hotelAddress, price, hotelImages, user_id FROM hotels";
 
-      res.status(200).json(result);
-    }
-  );
+  if (hotelType !== "all") {
+    query += ` WHERE hotelType = '${hotelType}'`;
+  }
+
+  db.query(query, (error, result) => {
+    if (error) throw error;
+    res.status(200).json(result);
+  });
 });
+
 module.exports = router;
