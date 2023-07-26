@@ -11,18 +11,6 @@ const bcrypt = require("bcrypt");
 
 const refreshTokens = [];
 
-// // 그다음 inspect, document.cookie 하면 쿠키에 들어있는 application  coolies 에서 정보확인가능
-// const posts = [
-//   {
-//     userName: "kyuhyun",
-//     title: "Post1",
-//   },
-//   {
-//     userName: "TESTUSERNAME",
-//     title: "Post2",
-//   },
-// ];
-
 // 미들웨어등록 (미들웨어 등록할 땐 항상 app.use 를 사용한다)
 router.use(express.json());
 router.use(cookieParser());
