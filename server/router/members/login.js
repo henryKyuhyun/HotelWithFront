@@ -21,7 +21,7 @@ router.post("/login", (req, res) => {
 
   // DB에서 사용자 조회
   db.query(
-    "SELECT*FROM users WHERE user_id =?",
+    "SELECT * FROM users WHERE user_id = ?",
     [user_id],
     async (error, results) => {
       if (error) throw error;
@@ -59,11 +59,12 @@ router.post("/login", (req, res) => {
         maxAge: 24 * 60 * 60 * 1000,
       });
 
-      res.json({ accessToken: accessToken });
+      // Add user_role to the response
+      res.json({ accessToken: accessToken, userRole: user.user_role });
     }
   );
 });
-// authmiddleware 를 넣어줌으로써 token 확인을 한 경우에만 posts를 받을 수 있음.
+
 router.get("/posts", authMiddleware, (req, res) => {
   res.json(posts);
 });
@@ -103,13 +104,15 @@ router.get("/refresh", (req, res) => {
     if (err) return res.sendStatus(403);
     // accessToken 을 생성하기
     const accessToken = jwt.sign(
-      { id: user.id, password: user.password },
+      // { id: user.id, password: user.password },
+      { id: user.id },
       secretText,
       {
         expiresIn: "20s",
       }
     );
-    res.json({ accessToken: accessToken });
+    // res.json({ accessToken: accessToken });
+    res.json({ accessToken: accessToken, userRole: user.user_role });
   });
 });
 
