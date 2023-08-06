@@ -11,6 +11,7 @@ const uploadHotel = require("./router/hotel/uploadHotel");
 const hotelList = require("./router/hotel/hotelList");
 const hotelDetail = require("./router/hotel/hotelDetail");
 const hotelComment = require("./router/hotel/hotelComment");
+const like = require("./router/wish/like");
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -28,6 +29,7 @@ app.use("/api", uploadHotel);
 app.use("/api", hotelList);
 app.use("/api", hotelDetail);
 app.use("/api", hotelComment);
+app.use("/api", like);
 
 const port = 4000;
 app.listen(port, () => {
