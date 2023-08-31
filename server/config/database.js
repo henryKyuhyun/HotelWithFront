@@ -2,9 +2,10 @@ const mysql = require("mysql");
 
 const db = mysql.createConnection({
   // .env로 바꿔주기
-  host: "localhost",
+  host: "localhost", //Error: connect ECONNREFUSED ::1:3306
+  // host: "127.0.0.1",
   user: "root",
-  password: "1234",
+  password: "zhtanf5246150!",
   port: 3306,
   database: "hotelmembers",
 });
