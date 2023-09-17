@@ -19,7 +19,6 @@ const hotelPayment = require('./router/hotel/hotelPayment');
 
 
 
-
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -45,8 +44,12 @@ app.use('/api', hotelPayment);
 //chat
 const server = http.createServer(app);
 
-const chat = require('./router/chat/chat')
+const {chat,getConnectedUserIds } = require('./router/chat/chat')
 chat(server);
+
+app.get('/api/connectedUsers', (req, res) => {
+  res.json(getConnectedUserIds());
+});
 
 
 process.on('uncaughtException', function (err) {
@@ -54,13 +57,10 @@ process.on('uncaughtException', function (err) {
   console.error("Node NOT Exiting...");//receiverId 가 정의되지않았을때.
 });
 
-process.on('unhandledRejection', function (err, promise) {
-  console.error(err);
-  console.error("Node NOT Exiting...");  //receiverId 가 정의되지않았을때.
-});
 
 const port = 4000;
 
 server.listen(4000, () => console.log(`Listening on port ${port}`));
 
 
+module.exports = app; //모듈추가하자

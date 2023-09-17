@@ -9,19 +9,17 @@ const hotelAdminSockets = new Map();
 const chat = (server) => {
   const io = socketIo(server, {
     cors: {
+      credentials: true,
       origin: "http://localhost:3000",
       methods: ["GET", "POST"],
     },
   });
   // console.log(`User ID from Redux Store: ${userSockets}}`);  // db에 아이디저장이안됌 확인 // -> ReduxStore 은 client에서만 사용가능하기떄문에 proxy 에러를 발생시키네
-
   io.on("connection", (socket) => {
     console.log(`New client connected: ${socket.id}`);
 
     socket.on("register", ({ role, userId }) => {
       console.log(`Registered user with ID!!!!!!!!!: ${userId}`);// userId 확인
-      
-      // console.log('Registered user with ID:', data.userId);
 
       if (role === "site_admin") {
         siteAdminSocket = socket;
@@ -36,46 +34,52 @@ const chat = (server) => {
     
     socket.on("chat message", ({ userId, role, receiverId, message }) => {
       console.log(`Message received from ${userId}: ${message}`);
-      console.log('siteAdminSocket:', siteAdminSocket);   //  socket 연결확인위해서.
-      console.log('siteAdminSocket:', siteAdminSocket ? siteAdminSocket.id : 'null');
+
+      // Generate a unique chat room ID by combining sender and receiver IDs
+      const chatRoomId = [userId, receiverId].sort().join('_');
 
       // If the sender is a site admin
       if (role === 'site_admin') {
         const userSocket = userSockets.get(receiverId);
         const hotelAdminSocket = hotelAdminSockets.get(receiverId);
-    
+      
         if (userSocket) {
           userSocket.emit('chat message', { userId: 'site_admin', role: 'site_admin', message });
+          console.log(`Sent chat message to user with ID ${receiverId}:`, { userId: 'site_admin', role: 'site_admin', message });
+      
         } else if (hotelAdminSocket) {
           hotelAdminSocket.emit("chat message", { userId: 'site_admin', role: 'site_admin', message });
+          console.log(`Sent chat message to hotel admin with ID ${receiverId}:`, { userId: 'site_admin', role: 'site_admin', message });
+      
         } else {
           console.log(`Receiver with ID ${receiverId} is not connected`);
         }
-      } else { 
+      } else {
         // If the sender is a user or a hotel admin
-if (role === "user") {
-  if (siteAdminSocket) {
-    siteAdminSocket.emit("chat message", { userId, role:"user", receiverId: 'site_admin', message });
-  } else{
-    console.log("SITE ADMIN is NOT CONNECTED!!");
-  }
-} else if (role === "hotel_admin") {
-  if (siteAdminSocket) {
-    siteAdminSocket.emit("chat message", { userId, role:"hotel_admin", receiverId: 'site_admin', message });
-  } else{
-    console.log("SITE ADMIN is NOT CONNECTED!!");
-  }
-}
+        if (role === "user") {
+          if (siteAdminSocket) {
+            siteAdminSocket.emit("chat message", { userId, role:"user", receiverUserId: 'site_admin', chatRoomID: chatRoomId ,message });
+          } else{
+            console.log("SITE ADMIN is NOT CONNECTED!!");
+          }
+        } else if (role === "hotel_admin") {
+          if (siteAdminSocket) {
+            siteAdminSocket.emit("chat message", { userId, role:"hotel_admin", receiverUserId:'site_admin', chatRoomID: chatRoomId ,message});
+            } else{
+              console.log("SITE ADMIN is NOT CONNECTED!!");
+            }
+        }
+        
       }
-    
-      // Generate a unique chat room ID by combining sender and receiver IDs
-      const chatRoomId = `${userId}_${receiverId}`;
     
       const sqlInsert = "INSERT INTO ChatMessages (sender_id, receiver_id, message, chatRoomId) VALUES (?, ?, ?, ?)";
     
       db.query(sqlInsert,[userId,receiverId,message,chatRoomId],(err)=>{
-        if(err) throw err;
-        console.log("Chat message saved to the database!!");
+        if(err) {
+          console.error('Error while saving chat message:', err);
+        } else{
+          console.log("Chat message saved to the database!!");
+        }
       })
     });
 
@@ -83,7 +87,12 @@ if (role === "user") {
       const sqlSelect = "SELECT * FROM ChatMessages WHERE chatRoomId=?";
       
       db.query(sqlSelect,[chatRoomId],(err,result)=>{
-        if(err) throw err;
+        if(err){
+          console.error('Error while fetching messages:', err);
+        }else{
+          socket.emit("chat history", result); 
+          console.log('Sent chat history to client:', result);
+        }
         socket.emit("chat history", result); // Send fetched messages to the client
         console.log('chat messages fetched!');
       });
@@ -92,9 +101,7 @@ if (role === "user") {
 
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
-      // if (userSockets.get(socket.id)) userSockets.delete(socket.id);
-      // else if (hotelAdminSockets.get(socket.id)) hotelAdminSockets.delete(socket.id);
-      // else siteAdminSocket = null;
+
       if (userSockets.get(socket.id)) userSockets.delete(socket.id);
       else if (hotelAdminSockets.get(socket.id)) hotelAdminSockets.delete(socket.id);
       else if (siteAdminSocket && siteAdminSocket.id === socket.id) siteAdminSocket = null;
@@ -103,4 +110,8 @@ if (role === "user") {
 };
 
 
-module.exports = chat;
+function getConnectedUserIds() {
+  return Array.from(userSockets.keys());
+}
+
+module.exports = { chat, getConnectedUserIds };
