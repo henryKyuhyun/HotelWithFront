@@ -2,10 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const http = require('http');
-
 const app = express();
 
-const test = require("./router/members/test");
 const join = require("./router/members/join");
 const login = require("./router/members/login");
 const uploadHotel = require("./router/hotel/uploadHotel");
@@ -16,10 +14,17 @@ const like = require("./router/wish/like");
 const myHotels = require("./router/hotel/myHotels");
 const editHotel = require("./router/hotel/editHotel");
 const hotelPayment = require('./router/hotel/hotelPayment');
+const notification = require("./router/notification/notification");
+const register = require("./router/notification/register");
 
+const myProfile = require('./router/members/myProfile');
 
-
-app.use(cors());
+// CORS 미들웨어 추가
+app.use(cors({
+  credentials: true,
+  origin: "http://localhost:3000", // React 앱에서의 요청 허용
+  methods: ["GET", "POST"],
+}));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -39,7 +44,14 @@ app.use("/api", like);
 app.use("/api", myHotels);
 app.use("/api", editHotel);
 app.use('/api', hotelPayment);
+app.use("/api", notification);
+app.use("/api", register);
+
 // app.use("/api/editHotel", editHotel);
+app.use('/api',myProfile);
+
+const myProfilePath = path.join(__dirname, "myProfile");
+app.use("/myProfile", express.static(myProfilePath));
 
 //chat
 const server = http.createServer(app);

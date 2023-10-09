@@ -10,15 +10,13 @@ const db = require("../../config/database");
 const bcrypt = require("bcrypt");
 
 const refreshTokens = [];
-
-// 미들웨어등록 (미들웨어 등록할 땐 항상 app.use 를 사용한다)
 router.use(express.json());
 router.use(cookieParser());
 
 router.post("/login", (req, res) => {
   const user_id = req.body.id;
   const user_pw = req.body.password;
-  console.log('Received user id:', user_id); // <- Add this line
+  console.log('Received user id:', user_id); 
 
   // DB에서 사용자 조회
   db.query(
@@ -41,15 +39,10 @@ router.post("/login", (req, res) => {
       if (!passwordMatch) {
         return res.status(401).send({ message: "잘못된 비밀번호입니다" });
       }
-
-      // Create Token by JWT payload + secretText
-      // 유효기간 추가
-      const accessToken = jwt.sign({ id: user.user_id }, secretText, {
+      const accessToken = jwt.sign({ id: user.user_id,role: user.user_role }, secretText, {
         expiresIn: "60s",
       });
       console.log('Access token:', accessToken); // <- Add this line
-
-
       // JWT 를 이용해 refreshToken 도 생성
       const refreshToken = jwt.sign({ id: user.user_id }, refreshSecretText, {
         expiresIn: "1d",
@@ -97,15 +90,10 @@ function authMiddleware(req, res, next) {
 
 // refresh Token 요청 cookie
 router.get("/refresh", (req, res) => {
-  // body => parsing => req.body
-  // cookies => parsing => req.cookies
-  // cookies 가져오기 cookie-parser
   const cookies = req.cookies;
   if (!cookies?.jwt) return res.sendStatus(403);
 
   const refreshToken = cookies.jwt;
-  // refreshToken 이 Db에 있는 토큰인지 확인
-  // if (!refreshToken.includes(refreshToken)) {
   if (!refreshTokens.includes(refreshToken)) {
     return res.sendStatus(403);
   }
@@ -115,19 +103,16 @@ router.get("/refresh", (req, res) => {
     if (err) return res.sendStatus(403);
     // accessToken 을 생성하기
     const accessToken = jwt.sign(
-      // { id: user.id, password: user.password },
-      { id: user.id },
+      { id: user.id, role: user.role },
       secretText,
       {
         expiresIn: "20s",
       }
     );
-    // res.json({ accessToken: accessToken });
     res.json({ accessToken: accessToken, userRole: user.user_role });
   });
 });
 
-// TODO -> post 를 Put이나 Patch로 변경해야 RESTful API 디자인 원칙에 더욱 적합.
 router.post("/change-password", authMiddleware, async (req, res) => {
   const { oldPassword, newPassword, accessToken } = req.body;
   console.log("Request received:", req.body); // <- 로깅 추가
@@ -135,11 +120,8 @@ router.post("/change-password", authMiddleware, async (req, res) => {
   console.log("accessToken:", accessToken); // <- 로깅 추가
 
   try {
-    // "getUserFromId"에서 "req.user.id" 사용
     const user = await getUserFromId(req.user.id);
     console.log("User data:", user); // <- 로깅 추가
-
-    // const passwordMatch = await bcrypt.compare(oldPassword, user.password);
     const passwordMatch = await bcrypt.compare(oldPassword, user.user_pw);
     console.log("Password match:", passwordMatch); // <- 로깅 추가
 
@@ -149,11 +131,8 @@ router.post("/change-password", authMiddleware, async (req, res) => {
         .json({ message: "기존 비밀번호와 일치하지 않습니다." });
     }
 
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10); //여기서 10은saltRountds 임
-    // "updateUserPassword"에서 "req.user.id" 사용
-
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
     await updateUserPassword(req.user.id, hashedNewPassword);
-
     res.status(200).json({ message: "비밀번호 성공적 변경되었습니다" });
   } catch (error) {
     console.log("Error:", error); // <- 로깅 추가

@@ -4,6 +4,8 @@ const db = require("../../config/database");
 const multer = require("multer"); // image 업로드를 위한 Module
 const { v4: uuid4 } = require("uuid");
 const path = require("path");
+const authMiddleware = require("../../middlewares/auth-middleware"); 
+const UploadMaxImages = 5;
 
 // 이미지 저장
 const storage = multer.diskStorage({
@@ -40,10 +42,25 @@ const upload = multer({
   },
 });
 
-router.post("/uploadHotel", upload.array("hotelImages", 5), (req, res) => {
+// router.post("/uploadHotel", upload.array("hotelImages", 5), (req, res) => {
+  router.post('/uploadHotel', authMiddleware, upload.any("hotelImages"), (req, res) => {
+
   console.log("Request body", req.body);
-  const { hotelName, hotelInfo, hotelType, hotelAddress, price, user_id } =
-    req.body;
+  if (req.files.length > UploadMaxImages) {
+    return res.status(400).json({ error: `최대 ${UploadMaxImages}개의 이미지 파일만 업로드 가능합니다.` });
+  } 
+  const { 
+    hotelName, 
+    hotelInfo,
+    hotelSubInfo,
+    maxGuests, 
+    hotelType,
+    hotelregion, 
+    hotelAddress, 
+    price, 
+    user_id 
+  } = req.body;
+  console.log("Request files", req.files);
 
   // user_role Db에서 가져오기
   db.query(
@@ -62,7 +79,10 @@ router.post("/uploadHotel", upload.array("hotelImages", 5), (req, res) => {
         const newHotel = {
           hotelName,
           hotelInfo,
+          hotelSubInfo,
+          maxGuests,
           hotelType,
+          hotelregion,
           hotelAddress,
           price,
           hotelImages,

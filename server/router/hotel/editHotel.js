@@ -3,6 +3,8 @@ const Router = express.Router();
 const db = require("../../config/database");
 const multer = require("multer");
 const path = require("path");
+const authMiddleware = require("../../middlewares/auth-middleware"); 
+const UploadMaxImages = 5;
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -33,28 +35,49 @@ const upload = multer({
 
 Router.put(
   "/editHotel/:hotelId",
-  upload.single("hotelImages"),
+  // upload.single("hotelImages"),
+  authMiddleware,
+  upload.any("hotelImages"),
+
   async (req, res) => {
     const { hotelId } = req.params;
-
-    const { hotelName, hotelInfo, hotelType, hotelAddress, price } = req.body;
+    if (req.files.length > UploadMaxImages) {
+      return res.status(400).json({ error: `최대 ${UploadMaxImages}개의 이미지 파일만 업로드 가능합니다.` });
+    }
+    const { 
+      hotelName, 
+      hotelInfo, 
+      hotelSubInfo, 
+      maxGuests,
+      hotelType, 
+      hotelregion,
+      hotelAddress,
+      price,
+      user_id
+    } = req.body;
+    
     const imagePath = req.file ? "hotelImage/" + req.file.filename : "";
-
     // const query =
-    //   "UPDATE hotels SET hotelName = ?, hotelInfo = ?, hotelType = ?, hotelAddress = ?, price = ? WHERE hotel_id = ?";
+    //   "UPDATE hotels SET hotelName = ?, hotelInfo = ?, hotelType = ?, hotelAddress = ?, price = ?" +
+    //   (imagePath ? ", hotelImages = ?" : "") +
+    //   " WHERE hotel_id = ?";
 
     const query =
-      "UPDATE hotels SET hotelName = ?, hotelInfo = ?, hotelType = ?, hotelAddress = ?, price = ?" +
-      (imagePath ? ", hotelImages = ?" : "") +
-      " WHERE hotel_id = ?";
+    "UPDATE hotels SET hotelName = ?, hotelInfo = ?, hotelSubInfo = ?, maxGuests = ?, hotelType = ?, hotelregion= ?, hotelAddress = ?, price = ?" +
+    (imagePath.length > 0 ? ", hotelImages = ?" : "") +
+    " WHERE hotel_id = ?";
+
 
     const values = [
       hotelName,
       hotelInfo,
+      hotelSubInfo,
+      maxGuests,
       hotelType,
+      hotelregion,
       hotelAddress,
       price,
-      ...(imagePath ? [imagePath] : []),
+      ...(imagePaths ? [imagePaths] : []),
       hotelId,
     ];
 
