@@ -12,12 +12,16 @@ router.post("/join", async (req, res) => {
     password: user_pw,
     role: user_role,
   } = req.body;
+
+  if(!user_id || !user_name || !user_pw || !user_role){
+    return res.status(400).json({isSuccess:"필수 정보가 누락되었습니다."});
+  }
   const sendData = { isSuccess: "" };
 
   // DB 중복 user_id 체크
   db.query(
     "SELECT * FROM users WHERE user_id = ?",
-    [user_id],
+  [user_id],
     async (error, results) => {
       if (error) throw error;
 

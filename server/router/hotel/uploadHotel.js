@@ -1,7 +1,8 @@
+// server/router/hotel/uploadHotel.js
 const express = require("express");
 const router = express.Router();
 const db = require("../../config/database");
-const multer = require("multer"); // image 업로드를 위한 Module
+const multer = require("multer");
 const { v4: uuid4 } = require("uuid");
 const path = require("path");
 const authMiddleware = require("../../middlewares/auth-middleware"); 
@@ -13,7 +14,6 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "hotelImage");
   },
-  // filename -> 현재시간 + 확장자
   filename: (req, file, cb) => {
     console.log(file);
     cb(null, Date.now() + path.extname(file.originalname));
@@ -41,8 +41,6 @@ const upload = multer({
     // fileSize: 10 * 1024 * 1024 //크기 제한 : 10MB
   },
 });
-
-// router.post("/uploadHotel", upload.array("hotelImages", 5), (req, res) => {
   router.post('/uploadHotel', authMiddleware, upload.any("hotelImages"), (req, res) => {
 
   console.log("Request body", req.body);
@@ -68,13 +66,12 @@ const upload = multer({
     [user_id],
     (error, result) => {
       if (error) throw error;
-      // user_role이 'hotel_admin'인 사용자 만 호텔 정보를 데이터베이스에 저장할 수 있는지 확인.
       if (result.length > 0 && result[0].user_role === "hotel_admin") {
         // 권한 확인 변경
         // const hotelImages = JSON.stringify(req.files.map((file) => file.path));
         const hotelImages = JSON.stringify(
           req.files.map((file) => "hotelImage/" + file.filename)
-        ); // 이걸로 변경
+        );
 
         const newHotel = {
           hotelName,
@@ -88,7 +85,6 @@ const upload = multer({
           hotelImages,
           user_id,
         };
-        // 클라이언트가 전송한 req.body에서 호텔 정보를 추출: 호텔 이름, 설명, 유형, 주소, 가격 및 사용자 아이디(user_id).
 
         db.query("INSERT INTO hotels SET ?", newHotel, (error) => {
           if (error) throw error;

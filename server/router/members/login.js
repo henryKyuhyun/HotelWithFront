@@ -40,18 +40,17 @@ router.post("/login", (req, res) => {
         return res.status(401).send({ message: "잘못된 비밀번호입니다" });
       }
       const accessToken = jwt.sign({ id: user.user_id,role: user.user_role }, secretText, {
-        expiresIn: "60s",
+        expiresIn: "30m",
       });
       console.log('Access token:', accessToken); // <- Add this line
       // JWT 를 이용해 refreshToken 도 생성
       const refreshToken = jwt.sign({ id: user.user_id }, refreshSecretText, {
-        expiresIn: "1d",
+        expiresIn: "7d",
       });
       console.log('Refresh token:', refreshToken); // <- Add this line
 
       refreshTokens.push(refreshToken);
       console.log('Refresh token:', refreshToken); // <- Add this line
-
 
       // refreshtoken 을 쿠키에 넣어주기
       res.cookie("jwt", refreshToken, {
@@ -72,9 +71,8 @@ router.get("/posts", authMiddleware, (req, res) => {
 function authMiddleware(req, res, next) {
   // Token 을 Request header 에서 가져온다
   const authHeader = req.headers["authorization"];
-  console.log("Request headers:", req.headers); // <- 로깅 추가
-  console.log("Authorization header:", authHeader); // <- 로깅 추가
-
+  console.log("Request headers:", req.headers);
+  console.log("Authorization header:", authHeader);
   // Bearer kjdsanfkwnefkq.dsfnioawenfjl.adsfnklwnkf
   const token = authHeader && authHeader.split(" ")[1];
   if (token == null) return res.sendStatus(401); // client error 발생시켜주기
@@ -82,7 +80,6 @@ function authMiddleware(req, res, next) {
   // Token 이 있으니 유효한지 확인하기
   jwt.verify(token, secretText, (err, user) => {
     if (err) return res.sendStatus(403); //client error
-
     req.user = user;
     next();
   });
@@ -106,7 +103,7 @@ router.get("/refresh", (req, res) => {
       { id: user.id, role: user.role },
       secretText,
       {
-        expiresIn: "20s",
+        expiresIn: "30m",
       }
     );
     res.json({ accessToken: accessToken, userRole: user.user_role });
@@ -115,15 +112,15 @@ router.get("/refresh", (req, res) => {
 
 router.post("/change-password", authMiddleware, async (req, res) => {
   const { oldPassword, newPassword, accessToken } = req.body;
-  console.log("Request received:", req.body); // <- 로깅 추가
-  console.log("Payload:", req.body); // <- 로깅 추가
-  console.log("accessToken:", accessToken); // <- 로깅 추가
+  console.log("Request received:", req.body);
+  console.log("Payload:", req.body);
+  console.log("accessToken:", accessToken);
 
   try {
     const user = await getUserFromId(req.user.id);
-    console.log("User data:", user); // <- 로깅 추가
+    console.log("User data:", user);
     const passwordMatch = await bcrypt.compare(oldPassword, user.user_pw);
-    console.log("Password match:", passwordMatch); // <- 로깅 추가
+    console.log("Password match:", passwordMatch);
 
     if (!passwordMatch) {
       return res
@@ -135,7 +132,7 @@ router.post("/change-password", authMiddleware, async (req, res) => {
     await updateUserPassword(req.user.id, hashedNewPassword);
     res.status(200).json({ message: "비밀번호 성공적 변경되었습니다" });
   } catch (error) {
-    console.log("Error:", error); // <- 로깅 추가
+    console.log("Error:", error);
     console.log("accessToken마지막줄", accessToken);
     res.status(500).json({ message: "서버오류입니다" });
     console.log("accessToken마지막줄", accessToken);

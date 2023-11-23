@@ -18,6 +18,8 @@ const notification = require("./router/notification/notification");
 const register = require("./router/notification/register");
 
 const myProfile = require('./router/members/myProfile');
+const searchBar = require('./router/search/search');
+const compareHotel = require('./router/hotel/compareHotel');
 
 // CORS 미들웨어 추가
 app.use(cors({
@@ -31,9 +33,6 @@ app.use(bodyParser.json());
 const path = require("path");
 const hotelImagePath = path.join(__dirname, "hotelImage");
 app.use("/hotelImage", express.static(hotelImagePath));
-// 게시판용  이미지 업로드후 public folder 에서 봐야하기 때문에
-
-// app.use("/api", test);
 app.use("/api", join);
 app.use("/api", login);
 app.use("/api", uploadHotel);
@@ -46,8 +45,9 @@ app.use("/api", editHotel);
 app.use('/api', hotelPayment);
 app.use("/api", notification);
 app.use("/api", register);
+app.use("/api", searchBar);
+app.use("/api", compareHotel);
 
-// app.use("/api/editHotel", editHotel);
 app.use('/api',myProfile);
 
 const myProfilePath = path.join(__dirname, "myProfile");
@@ -56,19 +56,18 @@ app.use("/myProfile", express.static(myProfilePath));
 //chat
 const server = http.createServer(app);
 
-const {chat,getConnectedUserIds } = require('./router/chat/chat')
+const {chat,getConnectedUserIds } = require('./router/chat/chat');
+
 chat(server);
 
 app.get('/api/connectedUsers', (req, res) => {
   res.json(getConnectedUserIds());
 });
 
-
 process.on('uncaughtException', function (err) {
   console.error(err);
   console.error("Node NOT Exiting...");//receiverId 가 정의되지않았을때.
 });
-
 
 const port = 4000;
 

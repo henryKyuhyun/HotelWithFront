@@ -10,8 +10,6 @@ router.post("/hotelPayment", authMiddleware, (req, res) => {
   db.query("SELECT user_id FROM hotels WHERE hotel_id = ?", [hotel_id], async (error, result) => {
     try {
       if (error) throw error;
-
-      console.error(error,"어디가문제1");
       const admin_id = result[0].user_id;
       // 결제 날짜
       const payment_date = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -23,7 +21,6 @@ router.post("/hotelPayment", authMiddleware, (req, res) => {
         if(error)
         throw error;
         console.log(error,"어디가문제2");
-
 
       await db.query(
         `SELECT p.*, h.*, u.* 
